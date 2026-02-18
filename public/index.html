@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Monster Brawl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Monster Brawl</h1>
+
+<div id="auth">
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="signup()">Signup</button>
+  <button onclick="login()">Login</button>
+</div>
+
+<div id="game" style="display:none;">
+  <h2 id="stats"></h2>
+  <button onclick="findMatch()">Find Match</button>
+
+  <div id="battle" style="display:none;">
+    <p>Your HP: <span id="myhp">100</span></p>
+    <p>Enemy HP: <span id="enemyhp">100</span></p>
+    <button onclick="attack()">Attack</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
