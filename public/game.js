@@ -1,4 +1,9 @@
-let ws = new WebSocket("wss://" + location.host);
+let ws = new WebSocket(
+  location.protocol === "https:"
+    ? "wss://" + location.host
+    : "ws://" + location.host
+);
+
 let currentRoom = null;
 let playerNumber = null;
 
@@ -10,7 +15,9 @@ function signup() {
       username: username.value,
       password: password.value
     })
-  }).then(r => r.json()).then(d => alert(d.success ? "Signed up!" : "Failed"));
+  }).then(r => r.json()).then(d =>
+    alert(d.success ? "Signed up!" : "Signup failed")
+  );
 }
 
 function login() {
@@ -26,6 +33,8 @@ function login() {
       auth.style.display = "none";
       game.style.display = "block";
       loadStats();
+    } else {
+      alert("Login failed");
     }
   });
 }
@@ -35,7 +44,7 @@ function loadStats() {
     .then(r => r.json())
     .then(data => {
       stats.innerText =
-        `Level ${data.level} | XP ${data.xp} | Wins ${data.wins} | Losses ${data.losses}`;
+        `XP: ${data.xp} | Wins: ${data.wins} | Losses: ${data.losses}`;
     });
 }
 
