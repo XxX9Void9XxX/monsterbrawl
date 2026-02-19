@@ -9,7 +9,7 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.static("../public"));
 
 app.use(session({
   secret: "monster-secret",
@@ -17,33 +17,19 @@ app.use(session({
   saveUninitialized: false
 }));
 
-// Use persistent disk on Render
-const db = new sqlite3.Database("/data/game.db");
+// LOCAL SQLITE (NO PERSISTENT DISK)
+const db = new sqlite3.Database("game.db");
 
-// Create tables
+// CREATE TABLES
 db.serialize(() => {
   db.run(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
     password TEXT,
-    coins INTEGER DEFAULT 0,
     xp INTEGER DEFAULT 0,
-    level INTEGER DEFAULT 1,
     wins INTEGER DEFAULT 0,
     losses INTEGER DEFAULT 0
-  )`);
-
-  db.run(`
-  CREATE TABLE IF NOT EXISTS monsters (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    name TEXT,
-    hp INTEGER,
-    attack INTEGER,
-    defense INTEGER,
-    level INTEGER DEFAULT 1,
-    xp INTEGER DEFAULT 0
   )`);
 });
 
@@ -56,16 +42,6 @@ app.post("/signup", (req, res) => {
     [username, password],
     function (err) {
       if (err) return res.json({ success: false });
-
-      const userId = this.lastID;
-
-      // Give starter monster
-      db.run(
-        `INSERT INTO monsters (user_id, name, hp, attack, defense)
-         VALUES (?, ?, ?, ?, ?)`,
-        [userId, "FlameWolf", 100, 20, 10]
-      );
-
       res.json({ success: true });
     }
   );
@@ -87,13 +63,12 @@ app.post("/login", (req, res) => {
   );
 });
 
-// Get player stats
+// GET PLAYER STATS
 app.get("/me", (req, res) => {
   if (!req.session.userId) return res.json(null);
 
   db.get(
-    `SELECT username, coins, xp, level, wins, losses
-     FROM users WHERE id = ?`,
+    `SELECT username, xp, wins, losses FROM users WHERE id = ?`,
     [req.session.userId],
     (err, user) => {
       res.json(user);
@@ -108,9 +83,11 @@ let queue = [];
 let battles = {};
 
 wss.on("connection", (ws) => {
+
   ws.on("message", (msg) => {
     const data = JSON.parse(msg);
 
+    // MATCHMAKING
     if (data.type === "findMatch") {
       queue.push(ws);
 
@@ -133,6 +110,7 @@ wss.on("connection", (ws) => {
       }
     }
 
+    // ATTACK
     if (data.type === "attack") {
       const battle = battles[data.roomId];
       if (!battle) return;
@@ -161,10 +139,11 @@ wss.on("connection", (ws) => {
         p2hp: battle.p2hp
       }));
 
+      // WIN CHECK
       if (battle.p1hp <= 0 || battle.p2hp <= 0) {
-        const winner = battle.p1hp > 0 ? battle.p1 : battle.p2;
+        const winnerSocket = battle.p1hp > 0 ? battle.p1 : battle.p2;
 
-        winner.send(JSON.stringify({ type: "win" }));
+        winnerSocket.send(JSON.stringify({ type: "win" }));
 
         delete battles[data.roomId];
       }
@@ -172,6 +151,10 @@ wss.on("connection", (ws) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log("Server running on port 3000");
+
+// RENDER PORT FIX
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
 });
