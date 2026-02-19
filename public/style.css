@@ -9,4 +9,10 @@ button {
   padding: 10px 20px;
   margin: 10px;
   font-size: 18px;
+  cursor: pointer;
+}
+
+input {
+  padding: 8px;
+  margin: 5px;
 }
